@@ -6,6 +6,8 @@ public class Main {
 
     public static void main(String[] args) {
         // write your code here
+
+        //示例
         String path = "D://print//docMachine.docx";
         NiceDoc doc = new NiceDoc(path);
         Map<String, Object> map = new HashMap<String, Object>();
@@ -35,6 +37,7 @@ public class Main {
         //doc.save("D://print//docx//" + UUID.randomUUID() + ".docx");
         //doc.saveOnlyComments("D://print//docx//" + UUID.randomUUID() + ".docx");
         doc.savePdf("D://print//docx//" + UUID.randomUUID() + ".pdf");
-        System.out.println("aspword-cli");
+        
+        System.out.println("aspword-cli run");
     }
 }

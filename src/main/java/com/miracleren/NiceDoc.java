@@ -1,6 +1,7 @@
 package com.miracleren;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -21,12 +22,14 @@ public class NiceDoc {
 
     /**
      * 验证
+     *
      * @return
      */
     private boolean setLicense() {
         try {
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            InputStream license = new FileInputStream(loader.getResource("license.xml").getPath());// 凭证文件
+            this.getClass().getResourceAsStream("/license.xml");
+            InputStream license = this.getClass().getResourceAsStream("/license.xml");
             License aposeLic = new License();
             aposeLic.setLicense(license);
             return true;
@@ -38,9 +41,10 @@ public class NiceDoc {
 
     /**
      * 初始化模板
+     *
      * @param tempPath
      */
-    NiceDoc(String tempPath) {
+    public NiceDoc(String tempPath) {
         try {
             if (setLicense()) {
                 doc = new Document(tempPath);
@@ -53,6 +57,7 @@ public class NiceDoc {
 
     /**
      * 标签数据替换
+     *
      * @param values map值列表
      */
     public void setLabel(Map<String, Object> values) {
@@ -75,13 +80,14 @@ public class NiceDoc {
                     String typeVal = cons[2];
                     if ("SC".equals(typeName)) {
                         //单选
-                        if (String.valueOf(values.get(typePar)).equals(typeVal))
+                        if (StringOf(values.get(typePar)).equals(typeVal))
                             rangeReplace(con, "√");
                         else
                             rangeReplace(con, "□");
                     } else if ("MC".equals(typeName)) {
                         //多选
-                        int parval = Integer.parseInt(values.get(typePar).toString());
+                        //String value = StringOf(values.get(typePar));
+                        int parval = values.get(typePar) == null ? 0 : Integer.parseInt(StringOf(values.get(typePar)));
                         int val = Integer.parseInt(typeVal);
                         if ((parval & val) == val)
                             rangeReplace(con, "√");
@@ -165,7 +171,7 @@ public class NiceDoc {
 
     /**
      * 表达式判断
-     *
+     * <p>
      * 目前支持
      * {{V-IF:par}}{{END:par}}  显示隐藏数据,等号目前支持 ==，！=
      */
@@ -215,6 +221,28 @@ public class NiceDoc {
     }
 
     /**
+     * 实体类转map
+     *
+     * @param object
+     * @return
+     */
+    public static Map<String, Object> entityToMap(Object object) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        for (java.lang.reflect.Field field : object.getClass().getDeclaredFields()) {
+            try {
+                boolean flag = field.isAccessible();
+                field.setAccessible(true);
+                Object o = field.get(object);
+                map.put(field.getName(), o);
+                field.setAccessible(flag);
+            } catch (Exception e) {
+                System.out.println("实体类转换：" + e.toString());
+            }
+        }
+        return map;
+    }
+
+    /**
      * 文本替换
      *
      * @param oldStr
@@ -229,6 +257,12 @@ public class NiceDoc {
         }
     }
 
+    /**
+     * 文本替换
+     *
+     * @param pattern
+     * @param newStr
+     */
     private void rangeReplace(Pattern pattern, String newStr) {
         Range range = doc.getRange();
         try {
@@ -238,6 +272,13 @@ public class NiceDoc {
         }
     }
 
+    /**
+     * 文本替换
+     *
+     * @param range
+     * @param oldStr
+     * @param newStr
+     */
     private void rangeReplace(Range range, String oldStr, String newStr) {
         try {
             range.replace("{{" + oldStr + "}}", newStr, new FindReplaceOptions());
