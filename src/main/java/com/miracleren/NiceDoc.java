@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.aspose.words.*;
 import jdk.nashorn.internal.runtime.regexp.joni.Regex;
@@ -69,32 +70,36 @@ public class NiceDoc {
             String con = pars.group();
             String[] cons = con.split(":");
             //纯内容标签替换
-            if (cons.length == 1) {
-                String labVal = StringOf(values.get(con));
-                rangeReplace(con, labVal);
-            } else {
-                if (cons.length == 3) {
-                    //类型标签
-                    String typeName = cons[0];
-                    String typePar = cons[1];
-                    String typeVal = cons[2];
-                    if ("SC".equals(typeName)) {
-                        //单选
-                        if (StringOf(values.get(typePar)).equals(typeVal))
-                            rangeReplace(con, "√");
-                        else
-                            rangeReplace(con, "□");
-                    } else if ("MC".equals(typeName)) {
-                        //多选
-                        //String value = StringOf(values.get(typePar));
-                        int parval = values.get(typePar) == null ? 0 : Integer.parseInt(StringOf(values.get(typePar)));
-                        int val = Integer.parseInt(typeVal);
-                        if ((parval & val) == val)
-                            rangeReplace(con, "√");
-                        else
-                            rangeReplace(con, "□");
+            try {
+                if (cons.length == 1) {
+                    String labVal = StringOf(values.get(con));
+                    rangeReplace(con, labVal);
+                } else {
+                    if (cons.length == 3) {
+                        //类型标签
+                        String typeName = cons[0];
+                        String typePar = cons[1];
+                        String typeVal = cons[2];
+                        if ("SC".equals(typeName)) {
+                            //单选
+                            if (StringOf(values.get(typePar)).equals(typeVal))
+                                rangeReplace(con, "√");
+                            else
+                                rangeReplace(con, "□");
+                        } else if ("MC".equals(typeName)) {
+                            //多选
+                            //String value = StringOf(values.get(typePar));
+                            int parval = values.get(typePar) == null ? 0 : Integer.parseInt(StringOf(values.get(typePar)));
+                            int val = Integer.parseInt(typeVal);
+                            if ((parval & val) == val)
+                                rangeReplace(con, "√");
+                            else
+                                rangeReplace(con, "□");
+                        }
                     }
                 }
+            } catch (Exception e) {
+                System.out.println(con + ":" + e);
             }
 
         }
@@ -388,6 +393,16 @@ public class NiceDoc {
             System.out.println("保存失败：" + e.toString());
             return false;
         }
+    }
+
+    public OutputStream saveStream() {
+        OutputStream ms = null;
+        try {
+            doc.save(ms, new OoxmlSaveOptions(SaveFormat.DOC));
+        } catch (Exception e) {
+            System.out.println("saveStream保存失败：" + e.toString());
+        }
+        return ms;
     }
 
     protected void finalize() {
