@@ -29,7 +29,6 @@ public class NiceDoc {
     private boolean setLicense() {
         try {
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            this.getClass().getResourceAsStream("/license.xml");
             InputStream license = this.getClass().getResourceAsStream("/license.xml");
             License aposeLic = new License();
             aposeLic.setLicense(license);
@@ -49,6 +48,16 @@ public class NiceDoc {
         try {
             if (setLicense()) {
                 doc = new Document(tempPath);
+                System.out.println("create docx successully");
+            }
+        } catch (Exception e) {
+            System.out.println(e.toString());
+        }
+    }
+    public NiceDoc(InputStream tempStream) {
+        try {
+            if (setLicense()) {
+                doc = new Document(tempStream);
                 System.out.println("create docx successully");
             }
         } catch (Exception e) {
@@ -239,6 +248,23 @@ public class NiceDoc {
                 field.setAccessible(true);
                 Object o = field.get(object);
                 map.put(field.getName(), o);
+                field.setAccessible(flag);
+            } catch (Exception e) {
+                System.out.println("实体类转换：" + e.toString());
+            }
+        }
+        return map;
+    }
+
+    public static Map<String, Object> entityToMap(Object object,boolean isLower) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        for (java.lang.reflect.Field field : object.getClass().getDeclaredFields()) {
+            try {
+                boolean flag = field.isAccessible();
+                field.setAccessible(true);
+                Object o = field.get(object);
+                String name = isLower == true? field.getName().toLowerCase():field.getName().toUpperCase();
+                map.put(name, o);
                 field.setAccessible(flag);
             } catch (Exception e) {
                 System.out.println("实体类转换：" + e.toString());
