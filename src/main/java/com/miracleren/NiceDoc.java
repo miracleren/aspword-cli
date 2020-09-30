@@ -1,15 +1,14 @@
 package com.miracleren;
 
+import java.awt.*;
 import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import com.aspose.words.*;
-import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 
 public class NiceDoc {
 
@@ -54,6 +53,7 @@ public class NiceDoc {
             System.out.println(e.toString());
         }
     }
+
     public NiceDoc(InputStream tempStream) {
         try {
             if (setLicense()) {
@@ -126,17 +126,17 @@ public class NiceDoc {
     public void setTable(List<Map<String, Object>> list, String tableName) {
         NodeCollection bookTables = doc.getChildNodes(NodeType.TABLE, true);
         for (Object table : bookTables) {
-            Table tb = (Table) table;
+            //Table tb = (Table) table;
             //判断是否循环列表
-            String rowFistText = tb.getRows().get(0).getText();
+            String rowFistText = ((Table) table).getRows().get(0).getText();
             String tableConfig = getFirstParName(rowFistText);
             if (!tableConfig.equals("")) {
                 //第一行为表格配置信息
                 String[] cons = tableConfig.split(":");
-                if (!cons[0].equals("TABLE") && !cons[1].equals(tableName))
-                    break;
+                if (!(cons[0].equals("TABLE") && cons[1].equals(tableName)))
+                    continue;
             } else
-                break;
+                continue;
 
             //查找配置循环列
             int i = 0, tempIndex = -1;
@@ -180,6 +180,85 @@ public class NiceDoc {
             //清除配置行
             ((Table) table).removeChild(((Table) table).getFirstRow());
             ((Table) table).removeChild(tempRow);
+
+            //合并列
+            mergeCells((Table) table, tempRow);
+        }
+    }
+
+    /// <summary>
+    /// 合并单元格
+    /// </summary>
+    /// <param name="tableIndex"></param>
+    /// <param name="colIndex"></param>
+    /// <param name="cellStart"></param>
+    /// <param name="cellEnd"></param>
+    public void mergeCells(Table table, Row tempRow) {
+        int j = 0;
+        for (Cell meg : tempRow.getCells()) {
+            String cellPars = getFirstParName(meg.getRange().getText()).replace(" ", "");
+            int index = j;
+            if (cellPars.indexOf(":MERG") > 0) {
+                int inStart = 0, inEnd = 0, i = 0;
+                String temVal = "";
+                for (Row trow : table.getRows()) {
+                    String nowVal = trow.getCells().get(index).getText();
+                    if (temVal.equals(nowVal)) {
+                        inEnd = i;
+                    } else {
+                        if (!temVal.isEmpty())
+                            mergColumnCell(table, index, inStart, inEnd);
+                        inStart = i;
+                        temVal = nowVal;
+                    }
+                    i++;
+                    //System.out.println(nowCell.getText());
+                }
+                if (inStart < inEnd) {
+                    mergColumnCell(table, index, inStart, inEnd);
+                }
+            }
+            j++;
+
+        }
+    }
+
+
+    /**
+     * 合并单元格列
+     *
+     * @param table
+     * @param colIndex
+     * @param cellStart
+     * @param cellEnd
+     */
+    public void mergColumnCell(Table table, int colIndex, int cellStart, int cellEnd) {
+        Point startCellPos = new Point(colIndex, cellStart);
+        Point endCellPos = new Point(colIndex, cellEnd);
+        Rectangle mergeRange = new Rectangle(Math.min((int) startCellPos.getX(), (int) endCellPos.getX()), Math.min((int) startCellPos.getY(), (int) endCellPos.getY()), Math.abs((int) endCellPos.getX() - (int) startCellPos.getX()) + 1,
+                Math.abs((int) endCellPos.getY() - (int) startCellPos.getY()) + 1);
+
+        for (int i = 0; i < table.getRows().getCount(); i++) {
+            Row row = table.getRows().get(i);
+            for (int j = 0; j < row.getCells().getCount(); j++) {
+                Cell cell = table.getRows().get(i).getCells().get(j);
+                Point currentPos = new Point(row.indexOf(cell), table.indexOf(row));
+
+                if (mergeRange.contains(currentPos)) {
+                    if (currentPos.getX() == mergeRange.getX()) {
+                        cell.getCellFormat().setHorizontalMerge(CellMerge.FIRST);
+                    } else {
+                        cell.getCellFormat().setHorizontalMerge(CellMerge.PREVIOUS);
+                    }
+
+                    if (currentPos.getY() == mergeRange.getY()) {
+                        cell.getCellFormat().setVerticalMerge(CellMerge.FIRST);
+                    } else {
+                        cell.getCellFormat().setVerticalMerge(CellMerge.PREVIOUS);
+                    }
+
+                }
+            }
         }
     }
 
@@ -256,14 +335,21 @@ public class NiceDoc {
         return map;
     }
 
-    public static Map<String, Object> entityToMap(Object object,boolean isLower) {
+    /**
+     * 实体类转map
+     *
+     * @param object
+     * @param isLower
+     * @return
+     */
+    public static Map<String, Object> entityToMap(Object object, boolean isLower) {
         Map<String, Object> map = new HashMap<String, Object>();
         for (java.lang.reflect.Field field : object.getClass().getDeclaredFields()) {
             try {
                 boolean flag = field.isAccessible();
                 field.setAccessible(true);
                 Object o = field.get(object);
-                String name = isLower == true? field.getName().toLowerCase():field.getName().toUpperCase();
+                String name = isLower == true ? field.getName().toLowerCase() : field.getName().toUpperCase();
                 map.put(name, o);
                 field.setAccessible(flag);
             } catch (Exception e) {
@@ -272,6 +358,7 @@ public class NiceDoc {
         }
         return map;
     }
+
 
     /**
      * 文本替换
@@ -356,7 +443,7 @@ public class NiceDoc {
     }
 
     /**
-     * 去除word水印
+     * 去除word水印，已破解
      *
      * @param ptch
      */
@@ -375,7 +462,7 @@ public class NiceDoc {
 //    }
 
     /**
-     * 去除pdf水印
+     * 去除pdf水印，已破解
      *
      * @param ptch
      */
@@ -421,14 +508,14 @@ public class NiceDoc {
         }
     }
 
-    public OutputStream saveStream() {
-        OutputStream ms = null;
+    public SaveOutputParameters saveOutStream(OutputStream out) {
         try {
-            doc.save(ms, new OoxmlSaveOptions(SaveFormat.DOC));
+            return doc.save(out, new OoxmlSaveOptions(SaveFormat.DOCX));
+
         } catch (Exception e) {
             System.out.println("saveStream保存失败：" + e.toString());
         }
-        return ms;
+        return null;
     }
 
     protected void finalize() {
