@@ -5,6 +5,11 @@ import java.io.File;
 import java.io.OutputStream;
 import java.util.*;
 
+/**
+ * 20200715 基于aspose模板生成word，
+ * by miracleren
+ */
+
 public class Main {
 
     public static void main(String[] args) {
@@ -66,7 +71,6 @@ public class Main {
         //doc.savePdf("D://print//docx//" + UUID.randomUUID() + ".pdf");
 
         //OutputStream stream = doc.saveStream();
-
 
 
         //File file = new File("D://file.")

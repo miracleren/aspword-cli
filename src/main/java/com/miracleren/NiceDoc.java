@@ -13,8 +13,10 @@ import com.aspose.words.*;
 public class NiceDoc {
 
     /**
-     * 20200715 基于aspose模板生成word，
-     * by miracleren
+     * @author： lee
+     * @email：miracleren@gmail.com
+     * @date：2021/6/29
+     * @基于aspose模板生成word
      */
 
     private static final String ASPOSE_VERSION = "18.6.0";
